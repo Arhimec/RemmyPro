@@ -178,9 +178,29 @@ const GameContainer: React.FC<{
 };
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  // Initialize user from localStorage
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const saved = localStorage.getItem('remmy_pro_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [isAdminModalOpen, setAdminModalOpen] = useState(false);
-  const [viewingAsUser, setViewingAsUser] = useState<string>('');
+  
+  // Initialize viewingAsUser from localStorage or fallback to logged in user
+  const [viewingAsUser, setViewingAsUser] = useState<string>(() => {
+    try {
+      const savedView = localStorage.getItem('remmy_pro_viewing_as');
+      if (savedView) return savedView;
+      const savedUser = localStorage.getItem('remmy_pro_user');
+      return savedUser ? JSON.parse(savedUser).username : '';
+    } catch {
+      return '';
+    }
+  });
   
   // Theme State - defaults to Dark (true) until loaded
   const [isDark, setIsDark, isThemeLoading] = usePersistedState<boolean>(true, 'remmy_pro_theme');
@@ -196,12 +216,21 @@ export default function App() {
   const handleLogin = (loggedInUser: User) => {
     setUser(loggedInUser);
     setViewingAsUser(loggedInUser.username);
+    localStorage.setItem('remmy_pro_user', JSON.stringify(loggedInUser));
+    localStorage.setItem('remmy_pro_viewing_as', loggedInUser.username);
   };
 
   const handleLogout = () => {
     setUser(null);
     setViewingAsUser('');
     setAdminModalOpen(false);
+    localStorage.removeItem('remmy_pro_user');
+    localStorage.removeItem('remmy_pro_viewing_as');
+  };
+
+  const handleSwitchView = (username: string) => {
+    setViewingAsUser(username);
+    localStorage.setItem('remmy_pro_viewing_as', username);
   };
 
   const activeStorageKey = useMemo(() => `${STORAGE_KEY_PREFIX}${viewingAsUser}`, [viewingAsUser]);
@@ -216,11 +245,7 @@ export default function App() {
       {/* Top Bar - Minimal */}
       <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-900 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-50 transition-colors">
         <div className="flex items-center gap-2">
-            {user.picture ? (
-                <img src={user.picture} alt="Profile" className="w-6 h-6 rounded-full border border-slate-300 dark:border-slate-700" />
-            ) : (
-                <div className={`w-2 h-2 rounded-full ${user.role === 'admin' ? 'bg-amber-500' : 'bg-emerald-500'}`}></div>
-            )}
+            <div className={`w-2 h-2 rounded-full ${user.role === 'admin' ? 'bg-amber-500' : 'bg-emerald-500'}`}></div>
             <span className="font-semibold text-sm text-slate-700 dark:text-slate-300">
                 {user.username} {viewingAsUser !== user.username && <span className="text-slate-500">({viewingAsUser})</span>}
             </span>
@@ -268,7 +293,7 @@ export default function App() {
             currentUser={user}
             isOpen={isAdminModalOpen}
             onClose={() => setAdminModalOpen(false)}
-            onSwitchView={setViewingAsUser}
+            onSwitchView={handleSwitchView}
             viewingAs={viewingAsUser}
         />
       )}

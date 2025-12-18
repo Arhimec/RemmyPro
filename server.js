@@ -1,16 +1,21 @@
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const fs = require('fs').promises;
-const path = require('path');
+import express from 'express';
+import cors from 'cors';
+import { promises as fs } from 'fs';
+import { existsSync } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const DATA_FILE = path.join(__dirname, 'storage.json');
+const DIST_DIR = path.join(__dirname, 'dist');
 
 app.use(cors());
-app.use(bodyParser.json({ limit: '50mb' })); // Increased limit for potential image data
-app.use(express.static(path.join(__dirname, 'dist'))); // Serve frontend build
+// Express 4.16+ has built-in body parsing
+app.use(express.json({ limit: '50mb' })); 
 
 // Helper to read data
 async function readData() {
@@ -18,8 +23,8 @@ async function readData() {
     const data = await fs.readFile(DATA_FILE, 'utf8');
     return JSON.parse(data);
   } catch (error) {
-    if (error.code === 'ENOENT') {
-      return {}; // Return empty object if file doesn't exist
+    if (error.code === 'ENOENT' || error instanceof SyntaxError) {
+      return {}; 
     }
     throw error;
   }
@@ -59,10 +64,22 @@ app.post('/api/store/:key', async (req, res) => {
   }
 });
 
-// Serve React App for any other route
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-});
+// Check if dist exists to serve frontend
+if (existsSync(DIST_DIR)) {
+  app.use(express.static(DIST_DIR));
+  
+  // Serve React App for any other route
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(DIST_DIR, 'index.html'));
+  });
+} else {
+  console.warn('WARNING: "dist" directory not found. Frontend will not be served.');
+  console.warn('Run "npm run build" to compile the frontend.');
+  
+  app.get('*', (req, res) => {
+    res.status(404).send('Frontend build not found. Please run "npm run build" on the server.');
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

@@ -1,7 +1,16 @@
-// In production, this should point to the relative path if served by the same express server
-// In development, you might need to point to http://localhost:3001
-const IS_DEV = import.meta.env.DEV;
-const BASE_URL = IS_DEV ? 'http://localhost:3001' : '';
+// Determine base URL based on current location
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+     const host = window.location.hostname;
+     // If running locally, assume backend is on port 3001
+     if (host === 'localhost' || host === '127.0.0.1') {
+         return 'http://localhost:3001';
+     }
+  }
+  return ''; // In production, use relative paths (same origin)
+};
+
+const BASE_URL = getBaseUrl();
 
 export const api = {
   get: async <T>(key: string): Promise<T | null> => {

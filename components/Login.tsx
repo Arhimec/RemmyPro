@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, LogIn, Loader2 } from 'lucide-react';
 import { Button } from './ui/Button';
-import { authenticate, initAuthDB, processGoogleToken } from '../utils/auth';
+import { authenticate, initAuthDB } from '../utils/auth';
 import { User } from '../types';
-import { GOOGLE_CLIENT_ID } from '../constants';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -17,44 +16,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   useEffect(() => {
     initAuthDB();
-
-    // Initialize Google Sign In
-    if (typeof window !== 'undefined' && (window as any).google) {
-        try {
-            (window as any).google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: handleGoogleCallback,
-                auto_select: false,
-                cancel_on_tap_outside: true,
-            });
-            
-            (window as any).google.accounts.id.renderButton(
-                document.getElementById("googleButtonDiv"),
-                { theme: "outline", size: "large", width: "100%" } 
-            );
-        } catch (e) {
-            console.error("Error initializing Google Sign-In", e);
-        }
-    }
   }, []);
-
-  const handleGoogleCallback = async (response: any) => {
-    if (response.credential) {
-        setIsSubmitting(true);
-        try {
-            const user = await processGoogleToken(response.credential);
-            if (user) {
-                onLogin(user);
-            } else {
-                setError("Failed to sign in with Google.");
-            }
-        } catch (e) {
-            setError("An unexpected error occurred.");
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,18 +82,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <Button type="submit" className="w-full" disabled={isSubmitting} icon={isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <LogIn size={18} />}>
             {isSubmitting ? 'Signing In...' : 'Sign In'}
           </Button>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white dark:bg-slate-900 px-2 text-slate-500">Or continue with</span>
-            </div>
-          </div>
-
-          {/* Google Button Container */}
-          <div id="googleButtonDiv" className="flex justify-center w-full h-[40px]"></div>
 
           <div className="text-center text-xs text-slate-500 mt-4">
             Default Admin: admin / admin
