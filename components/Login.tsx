@@ -14,8 +14,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Still run on mount, but we also run it on submit to be safe
   useEffect(() => {
-    initAuthDB();
+    initAuthDB().catch(console.error);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,6 +25,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setIsSubmitting(true);
     
     try {
+        // Ensure DB exists before trying to check credentials
+        await initAuthDB();
+        
         const user = await authenticate(username, password);
         if (user) {
             onLogin(user);
@@ -31,6 +35,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             setError('Invalid credentials');
         }
     } catch (e) {
+        console.error(e);
         setError("Connection error. Is the server running?");
     } finally {
         setIsSubmitting(false);

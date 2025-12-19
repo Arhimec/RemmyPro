@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Flag, Plus, History, Crown, TrendingUp, AlertCircle, Zap, Lock, Hash } from 'lucide-react';
 import { Player, Round } from '../types';
 import { Button } from './ui/Button';
@@ -12,6 +12,8 @@ interface GamePhaseProps {
   isDark: boolean;
 }
 
+const DRAFT_KEY = 'remmy_pro_draft_round';
+
 export const GamePhase: React.FC<GamePhaseProps> = ({
   players,
   rounds,
@@ -19,14 +21,53 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
   onFinishGame,
   isDark
 }) => {
-  const [currentScores, setCurrentScores] = useState<Record<string, string>>({});
+  // Load draft state or default
+  const [currentScores, setCurrentScores] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.currentScores || {};
+      }
+    } catch (e) {}
+    return {};
+  });
+
   const [view, setView] = useState<'input' | 'history' | 'chart'>('input');
   const [error, setError] = useState<string | null>(null);
 
-  // Round modifiers
-  const [isDouble, setIsDouble] = useState(false);
-  const [atuPlayer, setAtuPlayer] = useState<string | null>(null);
-  const [closedPlayer, setClosedPlayer] = useState<string | null>(null);
+  // Round modifiers - Load from draft
+  const [isDouble, setIsDouble] = useState(() => {
+     try {
+       const saved = localStorage.getItem(DRAFT_KEY);
+       return saved ? JSON.parse(saved).isDouble || false : false;
+     } catch { return false; }
+  });
+  
+  const [atuPlayer, setAtuPlayer] = useState<string | null>(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      return saved ? JSON.parse(saved).atuPlayer || null : null;
+    } catch { return null; }
+  });
+
+  const [closedPlayer, setClosedPlayer] = useState<string | null>(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      return saved ? JSON.parse(saved).closedPlayer || null : null;
+    } catch { return null; }
+  });
+
+  // Save draft whenever inputs change
+  useEffect(() => {
+    const draft = {
+      currentScores,
+      isDouble,
+      atuPlayer,
+      closedPlayer
+    };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  }, [currentScores, isDouble, atuPlayer, closedPlayer]);
 
   // Calculate ranks
   const rankedPlayers = useMemo(() => {
@@ -113,13 +154,14 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
       closedPlayerId: closedPlayer
     });
 
-    // Reset Form
+    // Reset Form and Clear Draft
     setCurrentScores({});
     setIsDouble(false);
     setAtuPlayer(null);
     setClosedPlayer(null);
     setView('input');
     setError(null);
+    localStorage.removeItem(DRAFT_KEY);
   };
 
   return (
