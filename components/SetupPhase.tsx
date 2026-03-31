@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, User, Trash2, Play, Trophy, Medal } from 'lucide-react';
-import { Player, GameStatus, CompletedGame } from '../types';
-import { MAX_PLAYERS, PLAYER_COLORS } from '../constants';
+import { Player, CompletedGame } from '../types';
+import { MAX_PLAYERS } from '../constants';
 import { Button } from './ui/Button';
 
 interface SetupPhaseProps {
