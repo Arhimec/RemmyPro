@@ -12,8 +12,9 @@ interface GameSummaryProps {
 }
 
 export const GameSummary: React.FC<GameSummaryProps> = ({ players, rounds, onStartNewGame, isDark }) => {
+  // Lowest score wins in Rummy
   const rankedPlayers = useMemo(() => {
-    return [...players].sort((a, b) => b.totalScore - a.totalScore); 
+    return [...players].sort((a, b) => a.totalScore - b.totalScore);
   }, [players]);
 
   const winner = rankedPlayers[0];
@@ -54,7 +55,13 @@ export const GameSummary: React.FC<GameSummaryProps> = ({ players, rounds, onSta
                             </span>
                         </div>
                     </div>
-                    <span className={`text-2xl font-bold font-mono ${index === 0 ? 'text-amber-400' : 'text-slate-300'}`}>
+                    <span className={`text-2xl font-bold font-mono ${
+                        index === 0
+                            ? 'text-amber-400'
+                            : player.totalScore < 0
+                                ? 'text-emerald-400'
+                                : 'text-slate-300'
+                    }`}>
                         {player.totalScore}
                     </span>
                 </div>
