@@ -43,7 +43,7 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
        return saved ? JSON.parse(saved).isDouble || false : false;
      } catch { return false; }
   });
-  
+
   const [atuPlayer, setAtuPlayer] = useState<string | null>(() => {
     try {
       const saved = localStorage.getItem(DRAFT_KEY);
@@ -69,7 +69,7 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
   }, [currentScores, isDouble, atuPlayer, closedPlayer]);
 
-  // Calculate ranks
+  // Calculate ranks — lowest score is best in Rummy
   const rankedPlayers = useMemo(() => {
     return [...players].sort((a, b) => a.totalScore - b.totalScore);
   }, [players]);
@@ -81,6 +81,16 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
     if (value === '' || /^-?\d*$/.test(value)) {
       setCurrentScores(prev => ({ ...prev, [playerId]: value }));
     }
+  };
+
+  const toggleSign = (playerId: string) => {
+    setCurrentScores(prev => {
+      const current = prev[playerId] || '';
+      if (current === '' || current === '0') return { ...prev, [playerId]: '-' };
+      if (current === '-') return { ...prev, [playerId]: '' };
+      const toggled = current.startsWith('-') ? current.slice(1) : `-${current}`;
+      return { ...prev, [playerId]: toggled };
+    });
   };
 
   const toggleAtu = (playerId: string) => {
@@ -116,14 +126,14 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
       const val = currentScores[p.id];
       // Default to 0 if empty
       let baseVal = (val && val !== '-' && val !== '') ? parseInt(val, 10) : 0;
-      
+
       // Validation: Base scores must be multiples of 5
       if (baseVal % 5 !== 0) {
           validationError = `Score for ${p.name} must be a multiple of 5`;
       }
 
       baseScores[p.id] = baseVal;
-      
+
       // --- CALCULATION LOGIC ---
       // 1. Joc Dublu doubles the BASE points
       let calculatedScore = baseVal * (isDouble ? 2 : 1);
@@ -147,7 +157,6 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
         return;
     }
 
-    // Allow submission even if 0s, provided user clicked save (implicit 0s)
     onAddRound(finalScores, baseScores, {
       isDouble,
       atuPlayerId: atuPlayer,
@@ -175,10 +184,10 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
           <div className="text-center">
             <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Round {rounds.length + 1}</h2>
           </div>
-          <div className="w-[100px]">{/* Spacer to balance the header flex layout since undo is gone */}</div>
+          <div className="w-[100px]">{/* Spacer */}</div>
         </div>
 
-        {/* Scores Grid - Replaces Horizontal Scroll */}
+        {/* Scores Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
           {rankedPlayers.map((player) => (
             <div 
@@ -196,7 +205,13 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
                 </div>
               )}
               <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate w-full text-center">{player.name}</span>
-              <span className={`text-xl font-bold font-mono ${player.id === leaderId ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
+              <span className={`text-xl font-bold font-mono ${
+                player.id === leaderId
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : player.totalScore < 0
+                    ? 'text-emerald-500 dark:text-emerald-400'
+                    : 'text-slate-900 dark:text-white'
+              }`}>
                 {player.totalScore}
               </span>
             </div>
@@ -236,7 +251,7 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
       <div className="animate-fade-in">
         {view === 'input' && (
             <form onSubmit={submitRound} className="space-y-6">
-                
+
                 {/* Global Modifiers */}
                 <div className="flex justify-center">
                     <button
@@ -254,28 +269,51 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
-                    {players.map(player => (
+                    {players.map(player => {
+                        const isNegative = (currentScores[player.id] || '').startsWith('-');
+                        return (
                         <div key={player.id} className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-3 shadow-sm transition-colors">
                             <div className="flex justify-between items-center">
                                 <label className="text-sm font-bold text-slate-700 dark:text-slate-200">{player.name}</label>
                                 {isDouble && <span className="text-[10px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-500 px-2 py-0.5 rounded uppercase">x2 Active</span>}
                             </div>
-                            
+
                             <div className="flex gap-3">
                                 {/* Score Input */}
                                 <div className="flex-1">
                                     <input
-                                        inputMode="decimal"
-                                        pattern="[0-9-]*"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
                                         value={currentScores[player.id] || ''}
                                         onChange={(e) => handleScoreChange(player.id, e.target.value)}
                                         placeholder="0"
-                                        className="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-4 text-lg font-mono text-center focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700 text-slate-900 dark:text-white"
+                                        className={`w-full h-12 bg-slate-50 dark:bg-slate-950 border rounded-lg px-4 text-lg font-mono text-center focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700 ${
+                                            isNegative
+                                                ? 'border-rose-400 dark:border-rose-500 text-rose-500 dark:text-rose-400'
+                                                : 'border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white'
+                                        }`}
                                     />
                                 </div>
-                                
+
                                 {/* Modifiers */}
                                 <div className="flex gap-2">
+                                    {/* ± Sign Toggle */}
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleSign(player.id)}
+                                        className={`h-12 w-12 rounded-lg border flex flex-col items-center justify-center transition-all ${
+                                            isNegative
+                                                ? 'bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-500/20'
+                                                : 'bg-slate-50 dark:bg-slate-950 text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-900'
+                                        }`}
+                                        title="Toggle negative/positive"
+                                    >
+                                        <span className="text-lg font-bold leading-none">
+                                            {isNegative ? '−' : '+'}
+                                        </span>
+                                        <span className="text-[9px] font-bold mt-0.5">sign</span>
+                                    </button>
+
                                     {/* Atu Button */}
                                     <button
                                         type="button"
@@ -308,9 +346,10 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
                                 </div>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
-                
+
                 {error && (
                     <div className="flex items-center gap-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-400/10 p-3 rounded-lg border border-red-200 dark:border-red-400/20 text-sm">
                         <AlertCircle size={16} />
@@ -346,28 +385,34 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
                         <div key={round.id} className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-4 transition-colors">
                             <div className="flex justify-between items-center mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Round {rounds.length - idx}</span>
-                                    {round.isDouble && <span className="text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-500 px-1.5 py-0.5 rounded uppercase font-bold">x2 Double</span>}
+                                    <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                                        Round {rounds.length - idx}
+                                    </span>
+                                    {round.isDouble && (
+                                        <span className="text-[10px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-500 px-1.5 py-0.5 rounded uppercase">x2</span>
+                                    )}
                                 </div>
-                                <span className="text-xs text-slate-500 dark:text-slate-600 font-mono">
-                                    {new Date(round.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                <span className="text-xs text-slate-400 dark:text-slate-600">
+                                    {new Date(round.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                {players.map(p => (
-                                    <div key={p.id} className="bg-slate-50 dark:bg-slate-950/50 rounded p-2 border border-slate-100 dark:border-slate-800/50 relative overflow-hidden transition-colors">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className="text-xs text-slate-500 dark:text-slate-400 truncate mr-2">{p.name}</span>
+                            <div className="grid grid-cols-2 gap-2">
+                                {players.map(player => (
+                                    <div key={player.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-950/50 rounded-lg px-3 py-2">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-sm text-slate-700 dark:text-slate-300">{player.name}</span>
+                                            {round.atuPlayerId === player.id && <Zap size={10} className="text-blue-500" />}
+                                            {round.closedPlayerId === player.id && <Lock size={10} className="text-emerald-500" />}
                                         </div>
-                                        <div className="flex justify-between items-end">
-                                            <div className="flex gap-1">
-                                                {round.atuPlayerId === p.id && <Zap size={12} className="text-blue-500 dark:text-blue-400" />}
-                                                {round.closedPlayerId === p.id && <Lock size={12} className="text-emerald-500 dark:text-emerald-400" />}
-                                            </div>
-                                            <span className={`text-sm font-mono font-bold ${round.scores[p.id] > 0 ? 'text-slate-700 dark:text-slate-200' : round.scores[p.id] < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`}>
-                                                {round.scores[p.id]}
-                                            </span>
-                                        </div>
+                                        <span className={`font-mono font-bold text-sm ${
+                                            round.scores[player.id] < 0
+                                                ? 'text-rose-500 dark:text-rose-400'
+                                                : round.scores[player.id] === 0
+                                                    ? 'text-slate-400 dark:text-slate-600'
+                                                    : 'text-slate-700 dark:text-slate-300'
+                                        }`}>
+                                            {round.scores[player.id]}
+                                        </span>
                                     </div>
                                 ))}
                             </div>
