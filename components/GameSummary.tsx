@@ -17,7 +17,6 @@ export const GameSummary: React.FC<GameSummaryProps> = ({ players, rounds, onSta
     return [...players].sort((a, b) => a.totalScore - b.totalScore);
   }, [players]);
 
-  const winner = rankedPlayers[0];
 
   return (
     <div className="max-w-2xl mx-auto w-full px-4 pt-10 pb-20">
