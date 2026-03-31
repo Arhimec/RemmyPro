@@ -1,6 +1,5 @@
 import React from 'react';
-import { Play, Users, Trophy, LogOut } from 'lucide-react';
-import { Button } from './ui/Button';
+import { Play, Users, Trophy } from 'lucide-react';
 
 interface DashboardProps {
   onNewGame: () => void;
