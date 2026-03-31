@@ -203,7 +203,7 @@ export default function App() {
   });
   
   // Theme State - defaults to Dark (true) until loaded
-  const [isDark, setIsDark, isThemeLoading] = usePersistedState<boolean>(true, 'remmy_pro_theme');
+  const [isDark, setIsDark] = usePersistedState<boolean>(true, 'remmy_pro_theme');
 
   useEffect(() => {
     if (isDark) {
