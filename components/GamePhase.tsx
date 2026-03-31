@@ -113,7 +113,6 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
     e.preventDefault();
     const finalScores: Record<string, number> = {};
     const baseScores: Record<string, number> = {};
-    let hasInput = false;
     let validationError = null;
 
     // Validation: Exactly one player must close
@@ -149,7 +148,6 @@ export const GamePhase: React.FC<GamePhaseProps> = ({
       }
 
       finalScores[p.id] = calculatedScore;
-      if (val) hasInput = true;
     });
 
     if (validationError) {
