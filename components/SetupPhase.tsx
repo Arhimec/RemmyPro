@@ -46,7 +46,8 @@ export const SetupPhase: React.FC<SetupPhaseProps> = ({
                 <Medal size={16} /> Last Game Results
              </h3>
              <div className="space-y-3">
-                {[...lastGame.players].sort((a,b) => b.totalScore - a.totalScore).map((p, i) => (
+                {/* Lowest score wins in Rummy */}
+                {[...lastGame.players].sort((a, b) => a.totalScore - b.totalScore).map((p, i) => (
                     <div key={p.id} className="flex items-center justify-between p-2 rounded-lg bg-slate-900/40 border border-slate-800/50">
                         <div className="flex items-center gap-3">
                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
@@ -59,7 +60,13 @@ export const SetupPhase: React.FC<SetupPhaseProps> = ({
                              </div>
                              <span className={`font-medium ${i === 0 ? 'text-amber-200' : 'text-slate-300'}`}>{p.name}</span>
                         </div>
-                        <span className={`font-mono font-bold ${i === 0 ? 'text-amber-400' : 'text-slate-400'}`}>
+                        <span className={`font-mono font-bold ${
+                            i === 0
+                                ? 'text-amber-400'
+                                : p.totalScore < 0
+                                    ? 'text-emerald-400'
+                                    : 'text-slate-400'
+                        }`}>
                             {p.totalScore}
                         </span>
                     </div>
@@ -136,7 +143,7 @@ export const SetupPhase: React.FC<SetupPhaseProps> = ({
       >
         Start New Game
       </Button>
-      
+
       {players.length > 0 && players.length < 2 && (
          <p className="text-center text-slate-500 text-sm mt-4">Need at least 2 players to start</p>
       )}
