@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../utils/api';
 
 export function usePersistedState<T>(initialValue: T, key: string) {
