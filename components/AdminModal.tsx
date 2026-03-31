@@ -13,7 +13,6 @@ interface AdminModalProps {
 }
 
 export const AdminModal: React.FC<AdminModalProps> = ({ 
-  currentUser, 
   isOpen, 
   onClose, 
   onSwitchView,
