@@ -36,9 +36,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ history, onBack }) => 
         )}
 
         {sortedHistory.map(game => {
-            const winner = [...game.players].sort((a,b) => b.totalScore - a.totalScore)[0];
+            // Lowest score wins in Rummy
+            const winner = [...game.players].sort((a, b) => a.totalScore - b.totalScore)[0];
             const isExpanded = expandedGameId === game.id;
-            
+
             return (
                 <div key={game.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm transition-colors">
                     {/* Header Card */}
@@ -72,10 +73,16 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ history, onBack }) => 
                             <div className="mb-4">
                                 <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Final Scores</h4>
                                 <div className="space-y-1">
-                                    {[...game.players].sort((a,b) => b.totalScore - a.totalScore).map((p, idx) => (
+                                    {[...game.players].sort((a, b) => a.totalScore - b.totalScore).map((p, idx) => (
                                         <div key={p.id} className="flex justify-between text-sm">
                                             <span className={`${idx === 0 ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-slate-700 dark:text-slate-300'}`}>{idx+1}. {p.name}</span>
-                                            <span className="font-mono text-slate-500 dark:text-slate-400">{p.totalScore}</span>
+                                            <span className={`font-mono ${
+                                                p.totalScore < 0
+                                                    ? 'text-emerald-500 dark:text-emerald-400'
+                                                    : 'text-slate-500 dark:text-slate-400'
+                                            }`}>
+                                                {p.totalScore}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
@@ -106,7 +113,13 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ history, onBack }) => 
                                                     {game.players.map(p => (
                                                         <td key={p.id} className="py-2 px-2 font-mono align-top">
                                                             <div className="flex flex-col items-start gap-0.5">
-                                                                <span className={round.scores[p.id] > 0 ? 'text-slate-700 dark:text-slate-300' : round.scores[p.id] < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}>
+                                                                <span className={
+                                                                    round.scores[p.id] < 0
+                                                                        ? 'text-rose-500 dark:text-rose-400'
+                                                                        : round.scores[p.id] === 0
+                                                                            ? 'text-slate-400 dark:text-slate-500'
+                                                                            : 'text-slate-700 dark:text-slate-300'
+                                                                }>
                                                                     {round.scores[p.id]}
                                                                 </span>
                                                                 <div className="flex gap-0.5">
