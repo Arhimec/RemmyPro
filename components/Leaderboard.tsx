@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronUp, Clock, Trophy, Lock, Zap, Hash } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronUp, Clock, Trophy, Lock, Zap } from 'lucide-react';
 import { CompletedGame } from '../types';
-import { Button } from './ui/Button';
 
 interface LeaderboardProps {
   history: CompletedGame[];
